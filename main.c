@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <termios.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -14,16 +13,12 @@ int set_speed(int *speed);
 void analysis(char field[HEIGHT][WIDTH]);
 void print_field(char field[HEIGHT][WIDTH], int speed, int generation);
 void clear_screen();
-void setup_terminal();
-void restore_terminal();
 void random_fill(char field[HEIGHT][WIDTH], int density);
 int load_from_file(char field[HEIGHT][WIDTH]);
 
 int main() {
   int speed, generation = 0;
   char field[HEIGHT][WIDTH];
-
-  setup_terminal();
 
   printf("Hey, wanna game for a while?\n");
   printf("Okay, then choose input:\n");
@@ -41,19 +36,17 @@ int main() {
     random_fill(field, density);
     break;
   case 2:
-    int er = load_from_file(field);
-    if (er)
+    if (load_from_file(field)) {
       return 1;
+    }
     break;
   default:
     printf("invalid choice. Bye...\n");
     return 1;
   }
 
-  int er = set_speed(&speed);
-  if (er != 0) {
+  if (set_speed(&speed)) {
     printf("enter speed from %d to %d\n", MIN_SPEED, MAX_SPEED);
-    restore_terminal();
     return 1;
   }
 
@@ -63,22 +56,7 @@ int main() {
     print_field(field, speed, ++generation);
   }
 
-  restore_terminal();
   return 0;
-}
-
-void setup_terminal() {
-  struct termios term;
-  tcgetattr(STDIN_FILENO, &term);
-  term.c_lflag &= ~(ICANON | ECHO);
-  tcsetattr(STDIN_FILENO, TCSANOW, &term);
-}
-
-void restore_terminal() {
-  struct termios term;
-  tcgetattr(STDIN_FILENO, &term);
-  term.c_lflag |= (ICANON | ECHO);
-  tcsetattr(STDIN_FILENO, TCSANOW, &term);
 }
 
 void clear_screen() { printf("\033[2J\033[H"); }
@@ -144,6 +122,7 @@ int load_from_file(char field[HEIGHT][WIDTH]) {
     }
   }
   fclose(file);
+  return 0;
 }
 
 int set_speed(int *speed) {
@@ -161,7 +140,6 @@ int set_speed(int *speed) {
 
 void print_field(char field[HEIGHT][WIDTH], int speed, int generation) {
   printf("\033[H");
-
   printf("..............................THE...GAME...OF...LIFE................."
          "............\n");
   printf("Alive: %d | Speed: %d | Ctrl+C to exit\n\n", generation,
